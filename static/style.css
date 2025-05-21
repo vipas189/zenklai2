@@ -1,0 +1,412 @@
+:root {
+  --bg-dark: #2d3748; /* Primary dark background */
+  --bg-dark-secondary: #2d3748; /* Slightly lighter dark, for elements */
+  --text-light: #e2e8f0; /* Main text on dark backgrounds */
+  --text-muted: #a7a7a7; /* Muted text on dark backgrounds */
+  --accent-blue: #604c63; /* A modern, vibrant blue */
+  --accent-blue-darker: #2d3748; /* Darker shade for hover/active */
+  --content-bg-light: #ffffff; /* Background for content areas like cards */
+  --content-text-dark: #1f2937; /* Text color for light backgrounds */
+  --border-light: #4a5568; /* Subtle border on dark backgrounds */
+  --border-form: #cbd5e0; /* Border for form inputs */
+  --font-primary: "Fira Code", monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: var(--font-primary);
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+  overflow-x: hidden;
+  margin: 0;
+  position: relative;
+  line-height: 1.4;
+}
+
+/* Header styles */
+.header {
+  background-color: var(--bg-dark);
+  padding: 12px 0;
+  text-align: center;
+  position: fixed;
+  width: 100%;
+  transition: transform 0.3s ease-in-out;
+  z-index: 1000; /* Highest */
+  top: 0;
+  left: 0;
+}
+
+.header h1 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  margin-bottom: 3px;
+  color: var(--text-light);
+}
+
+.header p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.header.hidden {
+  transform: translateY(-100%);
+}
+
+/* Tab navigation */
+.tabs-container {
+  display: flex;
+  /* Approximate header height + some breathing room */
+  height: calc(100vh - 85px);
+  margin-top: 85px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Buttons container */
+.tab-buttons-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.tab-button {
+  font-size: 1.3rem;
+  background-color: var(--bg-dark-secondary);
+  color: var(--text-light);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  border: none;
+  padding: 20px 10px;
+  width: 110px; /* Slightly wider for modern feel */
+  height: 100%;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.6s cubic-bezier(0.48, -0.35, 0.2, 1),
+    background-color 0.4s ease, color 0.4s ease;
+  position: absolute;
+  pointer-events: auto;
+  font-weight: 500;
+}
+
+.tab-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  background: linear-gradient(
+    to top,
+    #3b485d 70%,
+    var(--bg-dark-secondary) 100%
+  );
+  transition: opacity 0.4s ease;
+}
+
+.tab-button.active::before {
+  background: linear-gradient(
+    to top,
+    var(--accent-blue) 50%,
+    var(--bg-dark-secondary)
+  );
+  opacity: 1;
+}
+
+.tab-button:not(.active):hover::before {
+  opacity: 1;
+}
+
+.tab-button.train-button {
+  left: 0;
+}
+
+.tab-button.test-button {
+  left: 110px; /* Width of train button */
+}
+
+.tab-icon {
+  margin-bottom: 10px;
+  font-size: 30px; /* Larger icons */
+}
+
+/* Content area */
+.content-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.tab-content {
+  background-color: var(--content-bg-light);
+  color: var(--content-text-dark);
+  padding: 25px; /* Increased padding */
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition: left 0.6s cubic-bezier(0.48, -0.35, 0.2, 1),
+    width 0.4s cubic-bezier(0.48, -0.35, 0.2, 1); /* Bouncy transition */
+  overflow-y: auto;
+}
+
+/* Train tab specific positioning */
+.train-tab {
+  left: -100%;
+  width: calc(
+    100% - 220px
+  ); /* 130px (train button) + 130px (test button on right) */
+}
+
+.train-tab.active {
+  left: 110px; /* Width of the train button */
+}
+
+/* Test tab specific positioning */
+.test-tab {
+  left: 100%;
+  width: calc(100% - 110px);
+}
+
+.test-tab.active {
+  left: 110px; /* Overridden by test-mode */
+}
+
+/* Special modes for tab buttons and content */
+.tabs-container.train-mode .tab-button.test-button {
+  left: calc(100% - 110px);
+  z-index: 25;
+}
+
+.tabs-container.test-mode .tab-button.test-button {
+  left: 110px; /* Right after train button */
+}
+
+.tabs-container.test-mode .test-tab.active {
+  left: 220px; /* After train button (130px) + test button (130px) */
+  width: calc(100% - 220px);
+}
+
+/* Form elements */
+.card {
+  background-color: #f9fafb; /* Slightly off-white */
+  border-radius: 8px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Softer, more diffused shadow */
+}
+
+.card-title {
+  font-size: 1.25rem; /* Larger card titles */
+  margin-bottom: 20px;
+  color: var(--content-text-dark);
+  font-weight: 600;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -12px; /* Gutter for columns */
+}
+
+.form-col {
+  flex: 1 auto;
+  padding: 0 12px; /* Gutter for columns */
+  min-width: 180px; /* Increased min-width */
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #4b5563; /* Darker gray for labels */
+  font-weight: 600;
+}
+
+input[type="number"],
+input[type="text"],
+select {
+  width: 100%;
+  padding: 10px 14px; /* More padding */
+  border: 1px solid var(--border-form);
+  border-radius: 6px; /* Softer corners */
+  font-size: 0.9rem;
+  background-color: var(--content-bg-light);
+  color: var(--content-text-dark);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Focus ring */
+}
+
+.file-upload {
+  /* display: flex; */
+  display: inline-block;
+  align-items: center;
+}
+/* Custom file input styling */
+.file-upload input[type="file"] {
+  display: none; /* Hide the actual file input */
+}
+.file-upload .btn {
+  /* Style the button part */
+  margin-right: 12px;
+}
+
+#test-file-input {
+  display: none;
+}
+
+.file-label {
+  color: #6b7280; /* Muted label color */
+  font-size: 0.9rem;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.btn {
+  background-color: var(--accent-blue);
+  color: var(--content-bg-light);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  display: inline-flex; /* For aligning icon and text */
+  align-items: center;
+  justify-content: center;
+}
+
+.btn:hover {
+  background-color: var(--accent-blue-darker);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+
+.run-btn span {
+  /* For the play icon */
+  margin-right: 8px;
+  font-size: 1.1em; /* Make play icon slightly larger */
+}
+
+.console {
+  background-color: var(--bg-dark-secondary);
+  color: var(--text-muted);
+  padding: 16px;
+  border-radius: 6px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
+    monospace;
+  margin-top: 25px;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  border: 1px solid var(--border-light);
+  max-height: 300px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Add these styles for the console scrollbar to match your tab-content scrollbar */
+.console::-webkit-scrollbar {
+  height: 4px; /* Height for horizontal scrollbar */
+  width: 8px;
+}
+
+.console::-webkit-scrollbar-thumb {
+  background: #c7c7c7;
+  border-radius: 10px;
+}
+
+.console::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Scrollbar styling (optional, for a more modern look) */
+.tab-content::-webkit-scrollbar {
+  width: 8px;
+}
+.tab-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+.tab-content::-webkit-scrollbar-thumb {
+  background: #c7c7c7;
+  border-radius: 10px;
+}
+.tab-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.padding {
+  padding: 10px;
+}
+
+.margin {
+  margin-top: 10px;
+}
+
+.center-text {
+  text-align: center;
+}
+
+.drop-area {
+  width: 700px;
+  height: 400px;
+  margin: 10px auto;
+  border: 2px dashed #ccc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.drop-text {
+  position: absolute;
+}
+
+.test-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  z-index: 100;
+}
+
+.form-col {
+  display: flex;
+  flex-direction: column;
+}
+
+#cnn-dropout-rate {
+  max-width: 250px;
+}

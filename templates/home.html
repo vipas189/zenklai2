@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+{% block body %}
+  <!-- Main content -->
+  <div class="tabs-container" id="tabs-container">
+    <!-- Tab Buttons -->
+    <div class="tab-buttons-container" id="tab-buttons-container">
+      <div class="tab-button train-button"
+           id="train-btn"
+           onclick="openTab('train')">
+        <span class="tab-icon">⚙️</span> <!-- Gear Icon -->
+        Train
+      </div>
+      <div class="tab-button test-button"
+           id="test-btn"
+           onclick="openTab('test')">
+        <span class="tab-icon">🔬</span> <!-- Microscope Icon -->
+        Test
+      </div>
+    </div>
+    <!-- Content Area -->
+    <div class="content-container">
+      <!-- Train Tab Content -->
+      <div id="train" class="tab-content train-tab">
+        <div class="card">
+          <h2 class="card-title">Upload Training Data</h2>
+          <div class="form-group">
+            <label for="train-file-upload">Upload (Folder):</label>
+            <div class="file-upload">
+              <form action="{{ url_for('home_bp.upload_folder') }}"
+                    method="post"
+                    enctype="multipart/form-data">
+                <input type="file"
+                       id="train-zip-input"
+                       name="train_zip"
+                       accept=".zip"
+                       onchange="updateFileLabel('train-zip-input', 'train-zip-label'); this.form.submit();">
+                <button type="button"
+                        class="btn"
+                        onclick="document.getElementById('train-zip-input').click();">Choose Zip File</button>
+                <span class="file-label" id="train-zip-label">
+                  {% set messages = get_flashed_messages(category_filter=["image_count"]) %}
+                  {% if messages %}
+                    {% for msg in messages %}{{ msg }}{% endfor %}
+                  {% else %}
+                    No zip file chosen
+                  {% endif %}
+                </span>
+              </form>
+              <form action="{{ url_for('home_bp.delete_upload') }}" method="post">
+                {% if messages %}<button type="submit" class="btn margin">Delete upload</button>{% endif %}
+              </form>
+            </div>
+          </div>
+          <span class="file-label" id="train-folder-label">
+            {% set messages = get_flashed_messages(category_filter=["error"]) %}
+            {% for msg in messages %}{{ msg }}{% endfor %}
+          </span>
+        </div>
+        <form id="train-form"
+              action="{{ url_for('home_bp.start_training') }}"
+              method="post">
+          <div class="card">
+            <h2 class="card-title">Model Selection</h2>
+            <div class="form-group">
+              <label for="train-model-select">Select Model:</label>
+              <select id="train-model-select" name="model" onchange="toggleHyperparams()">
+                <option value="cnn-hyperparams">Convolutional Neural Network (CNN)</option>
+                <option value="svm-hyperparams">Support Vector Machine (SVM)</option>
+                <option value="vit-hyperparams">Vision Transformer (ViT)</option>
+              </select>
+            </div>
+          </div>
+          <div class="card">
+            <h2 class="card-title">Hyperparameters</h2>
+            <!-- CNN Hyperparameters -->
+            <div class="form-row" id="cnn-hyperparams">
+              <div class="form-col">
+                <label for="cnn-epochs">Epochs:</label>
+                <input type="number"
+                       id="cnn-epochs"
+                       value="10"
+                       name="cnn-epochs"
+                       min="1"
+                       max="100"
+                       step="1">
+              </div>
+              <div class="form-col">
+                <label for="cnn-batch-size">Batch Size:</label>
+                <input type="number"
+                       id="cnn-batch-size"
+                       value="32"
+                       name="cnn-batch-size"
+                       min="1"
+                       max="1024"
+                       step="1">
+              </div>
+              <div class="form-col">
+                <label for="cnn-early-stop">Early Stop:</label>
+                <input type="number"
+                       id="cnn-early-stop"
+                       value="32"
+                       name="cnn-early-stop"
+                       min="1"
+                       max="100"
+                       step="1">
+              </div>
+              <div class="form-col">
+                <label for="cnn-learning-rate">Learning Rate:</label>
+                <input type="number"
+                       id="cnn-learning-rate"
+                       value="0.001"
+                       name="cnn-learning-rate"
+                       min="0"
+                       max="1"
+                       step="any">
+              </div>
+              <div class="form-col">
+                <label for="cnn-optimizer">Optimizer:</label>
+                <select id="cnn-optimizer" name="cnn-optimizer">
+                  <option value="Adam">Adam</option>
+                  <option value="AdamW">AdamW</option>
+                  <option value="RMSprop">RMSprop</option>
+                </select>
+              </div>
+              <div class="form-col">
+                <label for="cnn-weight-decay">Weight Decay (L2):</label>
+                <input type="number"
+                       id="cnn-weight-decay"
+                       value="0.0001"
+                       name="cnn-weight-decay"
+                       min="0"
+                       max="1"
+                       step="any">
+              </div>
+              <div class="form-col">
+                <label for="cnn-dropout-rate">Dropout Rate:</label>
+                <input type="number"
+                       id="cnn-dropout-rate"
+                       value="0.5"
+                       name="cnn-dropout-rate"
+                       min="0"
+                       max="1"
+                       step="any">
+              </div>
+            </div>
+            <!-- SVM Hyperparameters -->
+            <div class="form-row" id="svm-hyperparams">
+              <div class="form-col">
+                <label for="svm-c">C:</label>
+                <input type="number"
+                       id="svm-c"
+                       value="1.0"
+                       name="svm-c"
+                       min="0.01"
+                       max="1000"
+                       step="any">
+              </div>
+              <div class="form-col">
+                <label for="svm-kernel">Kernel:</label>
+                <select id="svm-kernel" name="svm-kernel">
+                  <option value="rbf">RBF</option>
+                  <option value="linear">Linear</option>
+                  <option value="poly">Poly</option>
+                  <option value="sigmoid">Sigmoid</option>
+                </select>
+              </div>
+              <div class="form-col">
+                <label for="svm-gamma">Gamma:</label>
+                <select id="svm-gamma" name="svm-gamma">
+                  <option value="scale" selected>Scale</option>
+                  <option value="auto">Auto</option>
+                </select>
+              </div>
+              <div class="form-col" id="svm-poly-degree">
+                <label for="svm-degree">Degree:</label>
+                <input type="number"
+                       id="svm-degree"
+                       value="3"
+                       name="svm-degree"
+                       min="1"
+                       max="10"
+                       step="1">
+              </div>
+              <div class="form-col" id="svm-coef0">
+                <label for="svm-coef0">Coef0:</label>
+                <input type="number"
+                       id="svm-coef0"
+                       value="0.0"
+                       name="svm-coef0"
+                       min="-10"
+                       max="10"
+                       step="any">
+              </div>
+            </div>
+            <!-- ViT Hyperparameters -->
+            <div class="form-row" id="vit-hyperparams">
+              <div class="form-col">
+                <label for="vit-epochs">Epochs:</label>
+                <input type="number"
+                       id="vit-epochs"
+                       value="10"
+                       name="vit-epochs"
+                       min="1"
+                       max="100"
+                       step="1">
+              </div>
+              <div class="form-col">
+                <label for="vit-batch-size">Batch Size:</label>
+                <input type="number"
+                       id="vit-batch-size"
+                       value="32"
+                       name="vit-batch-size"
+                       min="1"
+                       max="512"
+                       step="1">
+              </div>
+              <div class="form-col">
+                <label for="vit-early-stop">Early Stop:</label>
+                <input type="number"
+                       id="vit-early-stop"
+                       value="32"
+                       name="vit-early-stop"
+                       min="1"
+                       max="100"
+                       step="1">
+              </div>
+              <div class="form-col">
+                <label for="vit-learning-rate">Learning Rate:</label>
+                <input type="number"
+                       id="vit-learning-rate"
+                       value="0.0001"
+                       name="vit-learning-rate"
+                       min="0.000001"
+                       max="1"
+                       step="any">
+              </div>
+              <div class="form-col">
+                <label for="vit-weight-decay">Weight Decay:</label>
+                <input type="number"
+                       id="vit-weight-decay"
+                       value="0.05"
+                       name="vit-weight-decay"
+                       min="0"
+                       max="1"
+                       step="any">
+              </div>
+              <div class="form-col">
+                <label for="vit-dropout-rate">Dropout Rate:</label>
+                <input type="number"
+                       id="vit-dropout-rate"
+                       value="0.1"
+                       name="vit-dropout-rate"
+                       min="0"
+                       max="1"
+                       step="any">
+              </div>
+            </div>
+            <div class="form-group">
+              <button class="btn run-btn" type="submit">
+                <span>▶</span> Start Training
+              </button>
+            </div>
+          </div>
+        </form>
+        <div class="console">
+          == Training Console ==
+          <br>
+          Awaiting training parameters...
+        </div>
+      </div>
+      <!-- Test Tab Content -->
+      <div id="test" class="tab-content test-tab">
+        <div id="results-area" class="card center-text">
+          <form id="upload-form"
+                action="{{ url_for('home_bp.test_upload_image') }}"
+                method="post"
+                enctype="multipart/form-data"
+                class="center-text">
+            <h2 class="card-title">Test Results</h2>
+            {% set messages = get_flashed_messages(category_filter=["traffic-sign"]) %}
+            {% if messages %}
+              {% for msg in messages %}<p>{{ msg }}</p>{% endfor %}
+            {% else %}
+              <p>Results will appear here after running a test.</p>
+            {% endif %}
+            <div id="drop-area"
+                 class="drop-area"
+                 onclick="document.getElementById('test-file-input').click()"
+                 ondragover="event.preventDefault()"
+                 ondrop="handleDrop(event)">
+              <span id="drop-text" class="drop-text">Drop or click to upload image</span>
+              <img id="test-image"
+                   alt="Test Image"
+                   height=""
+                   width=""
+                   src="{{ url_for('static', filename='uploads/test-images/image_name.png') }}"
+                   class="test-image">
+            </div>
+            <input type="file"
+                   id="test-file-input"
+                   name="test-file-input"
+                   accept="image/*,.ppm"
+                   onchange="handleFile(this.files); this.form.submit();">
+          </form>
+        </div>
+        <div class="card">
+          <form action="{{ url_for('home_bp.run_test') }}" method='post'>
+            <h2 class="card-title">Select Model for Testing:</h2>
+            <div class="form-group">
+              <label for="test-model-select">Select Model:</label>
+              <select id="test-model-select" name="model">
+                <option value="cnn">Convolutional Neural Network (CNN)</option>
+                <option value="svm">Support Vector Machine (SVM)</option>
+                <option value="vit">Vision Transformer (ViT)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <button class="btn run-btn" type="submit">
+                <span>▶</span> Run Test
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+  <script>
+  // Function to validate input values against constraints
+  function validateInput(input, min, max, isInteger, defaultValue) {
+    // Handle empty inputs
+    if (input.value.trim() === '') {
+      input.value = defaultValue;
+      return;
+    }
+    
+    let value = parseFloat(input.value);
+    
+    // Check if it's a valid number
+    if (isNaN(value)) {
+      input.value = defaultValue;
+      return;
+    }
+    
+    // Apply min/max constraints
+    if (value < min) value = min;
+    if (value > max) value = max;
+    
+    // For integers, round to whole number
+    if (isInteger) {
+      value = Math.round(value);
+    }
+    
+    // Update input with validated value
+    input.value = value;
+  }
+    const socket = io();
+    const consoleDiv = document.querySelector(".console");
+
+    // Listener for SocketIO messages
+    socket.on("log", (msg) => {
+      consoleDiv.innerHTML += "<br>" + msg.data;
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    });
+
+    // --- Handle Training Form Submission ---
+    const trainForm = document.getElementById('train-form');
+    if (trainForm) { // Check if the form exists
+        trainForm.addEventListener('submit', function(event) {
+          event.preventDefault(); // Prevent page refresh
+
+          consoleDiv.scrollTop = consoleDiv.scrollHeight;
+
+          const formData = new FormData(trainForm);
+
+          fetch(trainForm.action, {
+            method: trainForm.method,
+            body: formData
+          })
+          .then(response => {
+            // Check the status code
+            if (response.status === 204) { // Handle the 204 No Content status
+               consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            } else if (response.status >= 400 && response.status < 600) { // Handle client/server errors
+               response.text().then(text => {
+                 consoleDiv.innerHTML += "<br>Server error (" + response.status + "): " + text;
+                  consoleDiv.scrollTop = consoleDivscrollHeight;
+              });
+            } else {
+               // Handle other unexpected status codes
+               consoleDiv.innerHTML += "<br>Unexpected server response status: " + response.status;
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            }
+          })
+          .catch(error => {
+            // Handle network errors
+            consoleDiv.innerHTML += "<br>Network error: " + error;
+             consoleDiv.scrollTop = consoleDiv.scrollHeight;
+          });
+        });
+    }
+
+
+    // --- Handle Test Form Submission ---
+    const testForm = document.getElementById('test-form');
+    if (testForm) { // Check if the form exists
+        testForm.addEventListener('submit', function(event) {
+             event.preventDefault(); // Prevent page refresh
+
+             consoleDiv.innerHTML += "<br><br>== Test Console ==";
+             consoleDiv.innerHTML += "<br>Sending test request...";
+             consoleDiv.scrollTop = consoleDiv.scrollHeight;
+
+
+             const formData = new FormData(testForm);
+
+             fetch(testForm.action, {
+                 method: testForm.method,
+                 body: formData
+             })
+             .then(response => {
+                 // Similar logic as above to handle 204 or other statuses
+                 if (response.status === 204) {
+                    consoleDiv.innerHTML += "<br>Test request received. Awaiting output via SocketIO...";
+                    consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                 } else if (response.status >= 400 && response.status < 600) {
+                      response.text().then(text => {
+                         consoleDiv.innerHTML += "<br>Server error (" + response.status + "): " + text;
+                          consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                      });
+                 } else {
+                    consoleDiv.innerHTML += "<br>Unexpected server response status: " + response.status;
+                     consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                 }
+             })
+             .catch(error => {
+                 consoleDiv.innerHTML += "<br>Network error during test: " + error;
+                  consoleDiv.scrollTop = consoleDiv.scrollHeight;
+             });
+        });
+    }
+
+  </script>
+{% endblock body %}
