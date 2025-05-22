@@ -15,14 +15,10 @@ class SimpleCNN(nn.Module):
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
-            nn.Conv2d(128, 256, 3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2),
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(256 * 16 * 16, 512),  # assuming input size is 128x128
+            nn.Linear(128 * 32 * 32, 512),  # assuming input size is 128x128
             nn.ReLU(),
             nn.Dropout(p=dropout),
             nn.Linear(512, 256),

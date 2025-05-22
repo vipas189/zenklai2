@@ -28,7 +28,6 @@ import glob
 from PIL import Image
 from threading import Thread
 
-
 home_bp = Blueprint("home_bp", __name__)
 
 # Store the socketio instance (or pass it directly to the route functions)

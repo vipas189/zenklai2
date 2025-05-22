@@ -7,8 +7,8 @@ from models.mydataset import MyDataset
 from PIL import Image
 from config import Config
 from services.image_processing import transforming
-import matplotlib.pyplot as plt
 import torchvision.transforms.functional as TF
+from services.diagram import plot_training
 
 
 def start(
@@ -67,7 +67,7 @@ def start(
     val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = SimpleCNN(num_classes=len(y_train), dropout=dropout_rate).to(device)
+    model = SimpleCNN(num_classes=len(set(y_train)), dropout=dropout_rate).to(device)
 
     if opt_name == "adam":
         optimizer = torch.optim.Adam(
@@ -88,8 +88,6 @@ def start(
             weight_decay=weight_decay,
             momentum=0.9,
         )
-    else:
-        raise ValueError(f"Unsupported optimizer: {opt_name}")
 
     loss_fn = nn.CrossEntropyLoss()
 
@@ -107,12 +105,12 @@ def start(
         if early_stop(model, history, early_stop_num, socketio):
             print(f"Early stopping at epoch {epoch+1}")
             break
-
     socketio.emit(
         "log",
         {"data": "Finished Training!"},
     )
-    # plot_training(history)
+    torch.save(model.state_dict(), "best-models/model_weights.pth")
+    plot_training(history)
 
 
 def train(model, loss_fn, optimizer, train_loader, history, device, hyperparameters):
@@ -186,9 +184,9 @@ def val(model, loss_fn, val_loader, history, device, hyperparameters):
 
 def run_test():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = SimpleCNN(num_classes=259, dropout=0.2).to(device)
+    model = SimpleCNN(num_classes=43, dropout=0.2).to(device)
     model.load_state_dict(
-        torch.load("best-models/cnn0.002076378330061941.pth")
+        torch.load("best-models/model_weights.pth")
     )  # model = torch.load("best-models/cnn0.9782608695652174.pth", weights_only=False).to(
     #     device
     # )
@@ -208,29 +206,3 @@ def run_test():
         label = Config.CLASS_MAP[predicted.item()]
 
     return label
-
-    # def plot_training(history):
-    epochs = range(1, len(history["train_loss"]) + 1)
-
-    plt.figure(figsize=(12, 5))
-
-    plt.subplot(1, 2, 1)
-    plt.plot(epochs, history["train_loss"], label="Train Loss")
-    plt.plot(epochs, history["val_loss"], label="Val Loss")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.title("Loss over Epochs")
-    plt.legend()
-
-    plt.subplot(1, 2, 2)
-    plt.plot(epochs, history["train_acc"], label="Train Acc")
-    plt.plot(epochs, history["val_acc"], label="Val Acc")
-    plt.xlabel("Epochs")
-    plt.ylabel("Accuracy")
-    plt.title("Accuracy over Epochs")
-    plt.legend()
-
-    plt.tight_layout()
-    plt.savefig("static/plots/training_plot.png")  # Save plot to file
-    plt.show()
-    plt.close()
