@@ -2,7 +2,6 @@ from torch.utils.data import Dataset
 from PIL import Image
 from services.image_processing import image_processing
 import os
-from torchvision.transforms import ToPILImage
 
 # class MyDataset(Dataset):
 #     def __init__(self, data_list, labels, validation=False, vit=False):

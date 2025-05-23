@@ -7,6 +7,7 @@ from PIL import Image
 from config import Config
 from torchvision.models import vit_b_16, ViT_B_16_Weights
 from services.image_processing import transforming
+from services.diagram import plot_training
 
 
 def start(
@@ -78,7 +79,6 @@ def start(
 
     loss_fn = nn.CrossEntropyLoss()
 
-    epochs = hyperparameters.get("epochs")
     for epoch in range(epochs):
         train(model, loss_fn, optimizer, train_loader, history, device, hyperparameters)
         val(model, loss_fn, val_loader, history, device, hyperparameters)
@@ -95,7 +95,7 @@ def start(
         if early_stop(model, history, early_stop_num, socketio):
             print(f"Early stopping at epoch {epoch+1}")
             break
-
+    plot_training(history)
     socketio.emit(
         "log",
         {"data": "Finished Training!"},

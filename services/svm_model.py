@@ -6,6 +6,7 @@ from PIL import Image
 from config import Config
 from models.mydataset import MyDataset
 from services.image_processing import transforming
+from services.diagram import plot_training
 
 
 def start(
@@ -19,6 +20,12 @@ def start(
     socketio.emit("log", {"data": "Starting SVM training..."})
     socketio.emit("log", {"data": "Hyperparameters:"})
     socketio.emit("log", {"data": str(hyperparameters)})
+    history = {
+        "train_loss": [0] * hyperparameters.get("epochs", 1),
+        "val_loss": [0] * hyperparameters.get("epochs", 1),
+        "train_acc": [],
+        "val_acc": [],
+    }
     train_data = MyDataset(X_train, y_train)
     val_data = MyDataset(X_val, y_val)
 
@@ -89,6 +96,8 @@ def start(
     train_acc = svm_model.score(X_train, y_train)
 
     val_acc = svm_model.score(X_val, y_val)
+    history["train_acc"].append(train_acc)
+    history["val_acc"].append(val_acc)
 
     socketio.emit(
         "log",
@@ -101,6 +110,7 @@ def start(
 
     os.makedirs("best-models", exist_ok=True)
     dump(svm_model, "best-models/svm.joblib")
+    plot_training(history)
     socketio.emit(
         "log", {"data": f"Saved best model with validation accuracy: {val_acc:.4f}"}
     )

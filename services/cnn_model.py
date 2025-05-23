@@ -7,8 +7,9 @@ from models.mydataset import MyDataset
 from PIL import Image
 from config import Config
 from services.image_processing import transforming
-import torchvision.transforms.functional as TF
 from services.diagram import plot_training
+import tensorflow as tf
+import numpy as np
 
 
 def start(
@@ -61,11 +62,12 @@ def start(
     dropout_rate = hyperparameters.get("dropout_rate")
     early_stop_num = hyperparameters.get("early_stop")
 
-    train_data = MyDataset(X_train, y_train)
+    train_data = MyDataset(X_train, y_train, augment=True)
     val_data = MyDataset(X_val, y_val, validation=True)
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
 
+    # device = torch.device("cpu")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = SimpleCNN(num_classes=len(set(y_train)), dropout=dropout_rate).to(device)
 
@@ -102,15 +104,16 @@ def start(
                 f"Val Loss: {history.get('epoch_val_loss'):.4f} | Val Acc: {history.get('epoch_val_acc'):.4f} - Best: {history.get('best_val_accuracy'):.4f}"
             },
         )
+        if history.get("epoch_val_acc") >= history.get("best_val_accuracy"):
+            torch.save(model, f"best-models/cnn.pth")
         if early_stop(model, history, early_stop_num, socketio):
             print(f"Early stopping at epoch {epoch+1}")
             break
+    plot_training(history)
     socketio.emit(
         "log",
         {"data": "Finished Training!"},
     )
-    torch.save(model.state_dict(), "best-models/model_weights.pth")
-    plot_training(history)
 
 
 def train(model, loss_fn, optimizer, train_loader, history, device, hyperparameters):
@@ -183,26 +186,30 @@ def val(model, loss_fn, val_loader, history, device, hyperparameters):
 
 
 def run_test():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = SimpleCNN(num_classes=43, dropout=0.2).to(device)
-    model.load_state_dict(
-        torch.load("best-models/model_weights.pth")
-    )  # model = torch.load("best-models/cnn0.9782608695652174.pth", weights_only=False).to(
-    #     device
-    # )
-    model.eval()
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # model = torch.load("best-models/cnn.pth", weights_only=False).to(device)
+    # model.eval()
 
-    img_path = "static/uploads/test-images/image_name.png"
-    img = Image.open(img_path).convert("RGB")
-    _, val_transform, _, _ = transforming()
-    input_tensor = val_transform(img).unsqueeze(0).to(device)
-    transformed_img = input_tensor.squeeze(0).cpu()
-    pil_img = TF.to_pil_image(transformed_img)
-    pil_img.show()
+    # img_path = "static/uploads/test-images/image_name.png"
+    # img = Image.open(img_path).convert("RGB")
+    # _, val_transform, _, _ = transforming()
+    # input_tensor = val_transform(img).unsqueeze(0).to(device)
 
-    with torch.no_grad():
-        output = model(input_tensor)
-        _, predicted = torch.max(output, 1)
-        label = Config.CLASS_MAP[predicted.item()]
+    # with torch.no_grad():
+    #     output = model(input_tensor)
+    #     _, predicted = torch.max(output, 1)
+    #     label = Config.CLASS_MAP[predicted.item()]
+
+    # return label
+
+    model = tf.keras.models.load_model("best-models/cnn.keras")
+    img = Image.open("static/uploads/test-images/image_name.png").convert("RGB")
+    img = img.resize((64, 64))
+    img = np.expand_dims(img, axis=0)
+    img = np.array(img, dtype=np.float32) / 255.0
+
+    preds = model.predict(img)
+    predicted_class = np.argmax(preds, axis=1)[0]
+    label = Config.CLASS_MAP[predicted_class]
 
     return label
